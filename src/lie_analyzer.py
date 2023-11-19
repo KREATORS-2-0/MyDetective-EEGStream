@@ -3,6 +3,7 @@ import traceback
 import os
 import keyboard
 
+import lie_detection
 from biosensor_streamer import BiosensorStreamer
 
 
@@ -52,8 +53,10 @@ class LieAnalyzer():
 
 
     def analyze(self):
-        # analyze eeg_data
+        # write eeg_data into CSV file
+        self.write_as_csv_data(self.eeg_data, "data", "temp_eeg.csv")
         # update analysis_result
+        self.analysis_result = lie_detection.model("../data/temp_eeg.csv")
         # reset the eeg_data
         self.eeg_data = pd.DataFrame(columns=BiosensorStreamer.get_labels())
-        pass
+        return True
