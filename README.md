@@ -1,3 +1,3 @@
 # MyDetective-EEGStream
 
-Collects and writes the streamed EEG data into json format.
+Collects and writes the streamed EEG data into csv format.

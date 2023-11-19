@@ -5,7 +5,7 @@ import pandas as pd
 import serial.tools.list_ports
 from brainflow.board_shim import BoardShim, BrainFlowInputParams, BoardIds
 
-class EEGStreamer:
+class BiosensorStreamer:
     columns = ['EXG Channel 1', 'EXG Channel 2', 'EXG Channel 3', 'EXG Channel 4', 'Timestamp']
 
     def __init__(self, manual_input_com_port='COM3', sampling_rate=0.001):  # 1 milliseconds
@@ -39,6 +39,12 @@ class EEGStreamer:
         self.board.prepare_session()
         self.board.start_stream(45000)
         print('Streaming data from the Ganglion board...')
+        return True
+    
+
+    def display_data(self, data):
+        if data is not None and not data.empty():
+            print('\r' + str(data.iloc[-1]), end = ' ', flush=True)
 
 
     def read_data(self):
@@ -55,16 +61,8 @@ class EEGStreamer:
             eeg_data = data[eeg_channels]  # 2d-array, var goes right
             time_data = data[time_channel]  # 1d-array, var goes down
 
-            # print("Shape of eeg_data:", eeg_data.shape)
-            # print("Shape of time_data:", time_data.shape)
-
             # 1d-array to 2d-array, var goes right
             time_data = np.reshape(time_data, (1, len(time_data)))
-
-            # print("Shape of time_data:", time_data.shape)
-
-            # print("Shape of eeg_data.T:", eeg_data.T.shape)
-            # print("Shape of time_data.T:", time_data.T.shape)
 
             # raise error if data rate does not match
             if len(eeg_data.T) != len(time_data.T):
@@ -72,13 +70,12 @@ class EEGStreamer:
 
             # combine data and turn into pandas dataframe
             new_data = np.concatenate((eeg_data.T, time_data.T), axis=1)
-            new_df = pd.DataFrame(new_data, columns=self.columns)
+            partial_df = pd.DataFrame(new_data, columns=self.columns)
 
-            # print(new_df)
-            return new_df
+            return partial_df
 
         except Exception as e:
-            print('EEG data reading error: ', e)
+            # print('EEG data reading error: ', e)
             return None
 
     def stop_streaming(self):
@@ -86,3 +83,7 @@ class EEGStreamer:
             print('Stopping the stream and releasing session...')
             self.board.stop_stream()
             self.board.release_session()
+    
+
+    def get_labels(self):
+        return self.columns

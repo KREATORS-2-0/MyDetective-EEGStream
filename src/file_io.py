@@ -7,19 +7,22 @@ import os
 
 
 class FileIO:
-    data_dir = ""
+    default_dir = ""
     default_filename = ""
+    file_type = ""
 
-    def __init__(self, default_data_dir=os.path.join("..", "data"), default_filename="default_name.csv"):
-        self.data_dir = default_data_dir
+    def __init__(self, default_default_dir=os.path.join("..", "data"), default_filename="default_name.csv"):
+        self.default_dir = default_default_dir
         self.default_filename = default_filename
+        self.file_type = self.get_substring_after_last_period(default_filename)
 
+    '''
     def save_data(self, dataframe, filename=None):
         if filename is None:
             filename = self.default_filename
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        data_path = os.path.join(current_dir, self.data_dir)
+        data_path = os.path.join(current_dir, self.default_dir)
         file_path = os.path.join(data_path, filename)
 
         if os.path.exists(file_path):
@@ -70,3 +73,65 @@ class FileIO:
             except Exception as e:
                 print(f"Data save error occurred: {e}")
                 return
+    '''
+
+
+    def write_data(self, dataframe, filedir=None, filename=None):
+        if filedir == None:
+            filedir = self.default_dir
+        if filename == None:
+            filename = self.default_filename
+
+        if self.file_type.lower() == "csv":
+            self.write_csv_data(dataframe, filedir, filename)
+        elif self.file_type.lower() == "json":
+            self.write_json_data(dataframe, filedir, filename)
+        else:
+            return False
+
+
+    def write_csv_data(self, dataframe, filedir, filename):
+        if dataframe is None or dataframe.empty:
+            return False
+
+        # Create the data directory if it doesn't exist
+        os.makedirs(filedir, exist_ok=True)
+        # Path to the file in the data directory
+        filepath = os.path.join(filedir, filename)
+        # Write the data to the file
+        dataframe.to_csv(filepath, index=False)
+        return True
+
+
+    def write_json_data(self, dataframe, filedir, filename):
+        if dataframe is None or dataframe.empty:
+            return False
+    
+        # convert to json format
+        json_data = dataframe.to_json(orient='records', lines=True)
+        json_data = json_data.strip("[]")
+
+        # Create the data directory if it doesn't exist
+        os.makedirs(filedir, exist_ok=True)
+        # Path to the file in the data directory
+        filepath = os.path.join(filedir, filename)
+        # Write the data to the file
+        with open(filepath, 'w') as f:
+            f.write(json_data)
+        return True
+
+
+    @staticmethod
+    def get_substring_after_last_period(input_string):
+        # Find the index of the last period
+        last_period_index = input_string.rfind('.')
+
+        # Check if a period was found
+        if last_period_index != -1:
+            # Extract the substring after the last period
+            substring = input_string[last_period_index + 1:]
+
+            return substring
+        else:
+            # If no period is found, return the original string
+            return input_string
